@@ -112,9 +112,30 @@ def test_normalize_url_appends_sslmode():
     assert out.endswith("?sslmode=require")
 
 
-def test_normalize_url_preserves_existing_query():
-    url = "postgresql://u:p@host:5432/db?sslmode=disable"
-    assert crm._normalize_database_url(url).endswith("sslmode=disable")
+def test_normalize_url_pins_sslmode_and_preserves_other_params():
+    # sslmode is always forced to require (the pooler only accepts SSL);
+    # any other query params survive.
+    url = "postgresql://u:pw@host:6543/db?application_name=crm&sslmode=disable"
+    out = crm._normalize_database_url(url)
+    assert "application_name=crm" in out
+    assert "sslmode=require" in out
+    assert "sslmode=disable" not in out
+
+
+def test_normalize_url_repairs_mangled_sslmode():
+    # The exact pattern that broke the Render deploy:
+    #   invalid dsn: extra key/value separator "=" in URI query parameter: "sslmode"
+    url = "postgresql://u:pw@aws-0-region.pooler.supabase.com:6543/postgres?sslmode=require="
+    out = crm._normalize_database_url(url)
+    assert out.endswith("?sslmode=require")
+    assert "==" not in out
+
+
+def test_normalize_url_strips_whitespace():
+    url = "  postgresql://u:pw@host:5432/db?sslmode=require  "
+    out = crm._normalize_database_url(url)
+    assert not out.startswith(" ")
+    assert not out.endswith(" ")
 
 
 def test_normalize_url_rejects_multi_at():

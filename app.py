@@ -10,6 +10,7 @@ from datetime import datetime, date, timedelta
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 from contextlib import contextmanager
+from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 from flask import (
     Flask, jsonify, request, render_template, redirect,
@@ -72,9 +73,25 @@ limiter = Limiter(
 
 DATABASE_URL = (os.environ.get("DATABASE_URL") or "").strip()
 
+if IS_PROD and not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is not set. In Render → Environment, add DATABASE_URL "
+        "(your Supabase pooler URI) before deploying."
+    )
+
 # ── DB (psycopg2 + Supabase Postgres) ─────────────────────────────────────────
+_GLUED_PORT = re.compile(r"@\d+@aws-")
+
+
 def _normalize_database_url(url: str) -> str:
-    """Ensure sslmode and reject obviously broken hosts."""
+    """Normalize a Supabase pooler URI so psycopg2 always accepts it.
+
+    Strips whitespace, rejects obviously broken hosts, and rebuilds the query
+    string from parsed pairs with sslmode pinned to `require`. Rebuilding fixes
+    mangled queries (e.g. a stray '=' in `?sslmode=require=`) that libpq rejects
+    at parse time with "extra key/value separator" — the pooler only accepts SSL
+    anyway, so forcing `require` is always correct. Other params are preserved.
+    """
     if not url:
         raise RuntimeError(
             "DATABASE_URL is not set. "
@@ -82,17 +99,23 @@ def _normalize_database_url(url: str) -> str:
             "Supabase pooler URI (port 6543), e.g. "
             "postgresql://postgres.REF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres?sslmode=require"
         )
+    url = url.strip()
     # Common mistake: port glued into the host as "...@6543@aws-0-region...".
     # More than one '@' also usually means the password was not URL-encoded.
-    if url.count("@") > 1 and re.search(r"@\d+@aws-", url):
+    if url.count("@") > 1 and _GLUED_PORT.search(url):
         raise RuntimeError(
             "DATABASE_URL has more than one '@'. "
             "URL-encode special characters in the password (@ → %40). "
             "Host should look like: aws-0-ap-southeast-1.pooler.supabase.com"
         )
-    if "sslmode=" not in url:
-        url += ("&" if "?" in url else "?") + "sslmode=require"
-    return url
+    parts = urlsplit(url)
+    params = [
+        (k, v)
+        for k, v in parse_qsl(parts.query, keep_blank_values=True)
+        if k != "sslmode"
+    ]
+    params.append(("sslmode", "require"))
+    return urlunsplit(parts._replace(query=urlencode(params)))
 
 
 _pool = None

@@ -180,7 +180,7 @@ instance/           legacy SQLite (gitignored, reference only)
 
 | Variable | Purpose | Required |
 |---|---|---|
-| `DATABASE_URL` | Supabase pooler URI (sslmode added automatically) | Yes |
+| `DATABASE_URL` | Supabase pooler URI (sslmode forced to `require`, mangled query strings repaired) | Yes |
 | `SECRET_KEY` | Session signing; app refuses to start in prod without it | Yes (prod) |
 | `APP_ENV` | `production` forces Secure cookies + HSTS | No (default `development`) |
 | `DB_POOL_MAX` | Pooled connections per worker (keep ≥ threads) | No (default `8`) |
