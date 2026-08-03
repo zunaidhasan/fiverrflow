@@ -2,25 +2,31 @@
 {% block title %}Presales{% endblock %}
 {% block page_title %}Presales{% endblock %}
 {% block topbar_actions %}
-  <a href="{{ url_for('leads', view='list') }}" class="btn btn-sm {% if view != 'kanban' %}btn-primary{% else %}btn-outline-secondary{% endif %}">List</a>
-  <a href="{{ url_for('leads', view='kanban') }}" class="btn btn-sm {% if view == 'kanban' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Kanban</a>
-  <a href="{{ url_for('import_data') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-upload"></i></a>
-  <a href="{{ url_for('leads_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Add Lead</a>
+  <a href="{{ url_for('leads', view='list') }}" class="btn btn-sm {% if view != 'kanban' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+    <i class="bi bi-list-ul me-1"></i><span>List</span>
+  </a>
+  <a href="{{ url_for('leads', view='kanban') }}" class="btn btn-sm {% if view == 'kanban' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+    <i class="bi bi-kanban me-1"></i><span>Kanban</span>
+  </a>
+  <a href="{{ url_for('import_data') }}" class="btn btn-outline-secondary btn-sm" title="Import CSV"><i class="bi bi-upload"></i></a>
+  <a href="{{ url_for('leads_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i><span>Add Lead</span></a>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 reveal visible">
   <small class="text-muted">{{ total_leads }} leads · ${{ "{:,.0f}".format(total_quoted) }} quoted</small>
 </div>
 
-<div class="card mb-4">
-  <div class="card-body">
-    <form method="GET" class="row g-2">
+<div class="card mb-4 reveal">
+  <div class="card-body py-3">
+    <form method="GET" class="row g-2 align-items-end">
       <input type="hidden" name="view" value="{{ view }}">
-      <div class="col-md-3">
-        <input type="text" class="form-control" name="search" placeholder="Search client, profile..." value="{{ search }}">
+      <div class="col-12 col-md-3">
+        <label class="form-label">Search</label>
+        <input type="text" class="form-control" name="search" placeholder="Client, profile…" value="{{ search }}">
       </div>
-      <div class="col-md-2">
+      <div class="col-6 col-md-2">
+        <label class="form-label">Status</label>
         <select class="form-select" name="status">
           <option value="">All Status</option>
           {% for s in ['New','Brief Submitted','Replied','Proposal Sent','Sold','Passed'] %}
@@ -28,7 +34,8 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-2">
+      <div class="col-6 col-md-2">
+        <label class="form-label">Shift</label>
         <select class="form-select" name="shift">
           <option value="">All Shifts</option>
           {% for s in ['Morning','Evening','Night'] %}
@@ -36,7 +43,8 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-2">
+      <div class="col-6 col-md-2">
+        <label class="form-label">Stage</label>
         <select class="form-select" name="stage">
           <option value="">All Stages</option>
           {% for s in stages %}
@@ -44,11 +52,12 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-2">
+      <div class="col-6 col-md-2">
+        <label class="form-label">Month</label>
         <input type="month" class="form-control" name="month" value="{{ month_filter }}">
       </div>
-      <div class="col-md-1">
-        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-filter"></i></button>
+      <div class="col-12 col-md-1">
+        <button type="submit" class="btn btn-primary w-100" title="Filter"><i class="bi bi-funnel"></i></button>
       </div>
     </form>
   </div>
@@ -59,30 +68,42 @@
   {% for s in stages %}
   <div class="kanban-col" data-stage="{{ s.key }}">
     <div class="kanban-col-header">
-      <span style="color:{{ s.color or '#9ca3af' }}">{{ s.label }}</span>
-      <span class="badge bg-secondary">{{ board.get(s.key, [])|length }}</span>
+      <span class="d-inline-flex align-items-center gap-2">
+        <span style="width:8px;height:8px;border-radius:50%;background:{{ s.color or '#9ca3af' }}"></span>
+        {{ s.label }}
+      </span>
+      <span class="badge badge-soft">{{ board.get(s.key, [])|length }}</span>
     </div>
-    {% for lead in board.get(s.key, []) %}
-    <div class="kanban-card" draggable="true" data-id="{{ lead.id }}">
-      <div class="deal-title">{{ lead.client_username or '—' }}</div>
-      <div class="deal-meta">{{ lead.profile_name or '' }} · {{ lead.category or '' }}</div>
-      <div class="deal-value">${{ "{:,.0f}".format(lead.quoted_amount or 0) }}</div>
-      <div class="mt-2 d-flex gap-1">
-        <a href="{{ url_for('leads_edit', id=lead.id) }}" class="btn btn-sm btn-outline-secondary py-0">Edit</a>
-        {% if lead.status != 'Sold' %}
-        <a href="{{ url_for('leads_mark_sold', id=lead.id) }}" class="btn btn-sm btn-outline-success py-0">Sold</a>
-        {% endif %}
+    <div class="kanban-col-body">
+      {% for lead in board.get(s.key, []) %}
+      <div class="kanban-card" draggable="true" data-id="{{ lead.id }}">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div class="deal-title text-truncate">{{ lead.client_username or '—' }}</div>
+          {% if lead.status == 'Sold' %}
+          <span class="badge badge-sold">Sold</span>
+          {% endif %}
+        </div>
+        <div class="deal-meta text-truncate">{{ lead.profile_name or '' }}{% if lead.category %} · {{ lead.category }}{% endif %}</div>
+        <div class="deal-value">${{ "{:,.0f}".format(lead.quoted_amount or 0) }}</div>
+        <div class="mt-2 d-flex gap-1">
+          <a href="{{ url_for('leads_edit', id=lead.id) }}" class="btn btn-sm btn-outline-secondary py-0">Edit</a>
+          {% if lead.status != 'Sold' %}
+          <a href="{{ url_for('leads_mark_sold', id=lead.id) }}" class="btn btn-sm btn-outline-success py-0">Sold</a>
+          {% endif %}
+        </div>
       </div>
+      {% else %}
+      <div class="kanban-empty"><i class="bi bi-inbox me-1"></i>Drop leads here</div>
+      {% endfor %}
     </div>
-    {% endfor %}
   </div>
   {% endfor %}
 </div>
 {% else %}
-<div class="card">
+<div class="card reveal">
   <div class="card-body p-0">
     {% if leads %}
-    <div class="table-responsive">
+    <div class="table-responsive table-sticky">
       <table class="table table-hover align-middle mb-0">
         <thead>
           <tr>
@@ -93,26 +114,26 @@
         <tbody>
           {% for lead in leads %}
           <tr>
-            <td>{{ lead.date.strftime('%b %d') if lead.date else '—' }}</td>
-            <td><span class="badge bg-secondary">{{ lead.shift or '—' }}</span></td>
+            <td class="text-nowrap">{{ lead.date.strftime('%b %d') if lead.date else '—' }}</td>
+            <td><span class="badge badge-soft">{{ lead.shift or '—' }}</span></td>
             <td>{{ lead.source or '—' }}</td>
             <td>
               {% if lead.url %}
-              <a href="{{ lead.url }}" target="_blank" class="text-decoration-none text-accent">{{ lead.client_username }}</a>
+              <a href="{{ lead.url }}" target="_blank" rel="noopener" class="text-decoration-none text-accent">{{ lead.client_username }}</a>
               {% else %}{{ lead.client_username or '—' }}{% endif %}
             </td>
             <td>{{ lead.profile_name or '—' }}</td>
             <td>{{ lead.category or '—' }}</td>
             <td class="text-accent fw-semibold">${{ "{:,.0f}".format(lead.quoted_amount or 0) }}</td>
             <td>
-              <select class="form-select form-select-sm status-select" data-id="{{ lead.id }}" style="min-width:120px">
+              <select class="form-select form-select-sm status-select" data-id="{{ lead.id }}" style="min-width:125px">
                 {% for s in ['New','Brief Submitted','Replied','Proposal Sent','Sold','Passed'] %}
                 <option value="{{ s }}" {% if lead.status == s %}selected{% endif %}>{{ s }}</option>
                 {% endfor %}
               </select>
             </td>
             <td>
-              <select class="form-select form-select-sm stage-select" data-id="{{ lead.id }}" style="min-width:110px">
+              <select class="form-select form-select-sm stage-select" data-id="{{ lead.id }}" style="min-width:115px">
                 {% for s in stages %}
                 <option value="{{ s.key }}" {% if lead.stage_key == s.key %}selected{% endif %}>{{ s.label }}</option>
                 {% endfor %}
@@ -125,8 +146,8 @@
                 <a href="{{ url_for('leads_mark_sold', id=lead.id) }}" class="btn btn-outline-success" title="Mark as Sold"><i class="bi bi-bag-check"></i></a>
                 {% endif %}
                 <form action="{{ url_for('leads_delete', id=lead.id) }}" method="POST" class="d-inline" data-confirm="Delete lead &quot;{{ lead.client_username }}&quot;? This cannot be undone.">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-outline-danger" type="submit" title="Delete"><i class="bi bi-trash"></i></button>
                 </form>
               </div>
             </td>
@@ -150,8 +171,6 @@
 {% block scripts %}
 <script>
 // Every write goes through here so failures can never pass silently.
-// Previously these fetches ignored the response: if a save failed, the control
-// still showed the new value while the database kept the old one.
 const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
 async function postJSON(url, payload) {
@@ -225,8 +244,10 @@ if (board) {
       const card = dragCard;
       const origin = card.parentElement;
       const nextSibling = card.nextSibling;
-      const body = col.querySelector('.kanban-body') || col;
+      const body = col.querySelector('.kanban-col-body') || col;
 
+      // Move the empty-state hint to the end so it never sits above cards.
+      body.querySelectorAll('.kanban-empty').forEach(h => body.appendChild(h));
       body.appendChild(card);            // optimistic
       card.classList.add('saving');
       try {

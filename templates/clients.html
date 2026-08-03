@@ -3,12 +3,12 @@
 {% block page_title %}Sold / Orders{% endblock %}
 {% block topbar_actions %}
   <a href="{{ url_for('clients_new') }}" class="btn btn-success btn-sm">
-    <i class="bi bi-plus-lg me-1"></i>Add Order
+    <i class="bi bi-plus-lg me-1"></i><span>Add Order</span>
   </a>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 reveal visible">
   <small class="text-muted">
     {{ clients|length }} orders ·
     ${{ "{:,.0f}".format(total_orders|float) }} total ·
@@ -16,8 +16,8 @@
   </small>
 </div>
 
-<div class="card mb-4">
-  <div class="card-body">
+<div class="card mb-4 reveal">
+  <div class="card-body py-3">
     <form method="GET" class="row g-2 align-items-end">
       <div class="col-md-4">
         <label class="form-label">Search</label>
@@ -39,18 +39,16 @@
         <input type="month" class="form-control" name="month" value="{{ month_filter or '' }}">
       </div>
       <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100">
-          <i class="bi bi-filter me-1"></i>Filter
-        </button>
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1"></i>Filter</button>
       </div>
     </form>
   </div>
 </div>
 
-<div class="card">
+<div class="card reveal">
   <div class="card-body p-0">
     {% if clients %}
-    <div class="table-responsive">
+    <div class="table-responsive table-sticky">
       <table class="table table-hover align-middle mb-0">
         <thead>
           <tr>
@@ -71,8 +69,9 @@
           {% set order_amt = (c.order_amount or 0)|float %}
           {% set bonus_amt = (c.bonus_amount or 0)|float %}
           {% set net_amt = (order_amt + bonus_amt) * 0.8 %}
+          {% set st = c.status or 'WIP' %}
           <tr>
-            <td>
+            <td class="text-nowrap">
               {% if c.date %}
                 {{ c.date.strftime('%b %d, %Y') if c.date is not string else c.date }}
               {% else %}
@@ -80,7 +79,7 @@
               {% endif %}
             </td>
             <td>
-              <span class="badge badge-status">{{ c.account or '—' }}</span>
+              <span class="badge badge-soft">{{ c.account or '—' }}</span>
             </td>
             <td>
               <div class="fw-semibold">{{ c.client_name or '—' }}</div>
@@ -92,13 +91,14 @@
               <small>{{ c.project_name or '—' }}</small>
             </td>
             <td>
-              {% set st = c.status or 'WIP' %}
-              <span class="badge badge-status">{{ st }}</span>
+              <span class="badge {% if st == 'Delivered' %}badge-sold{% elif st == 'Revision' %}badge-revision{% elif st == 'Submitted' %}badge-brief{% else %}badge-wip{% endif %}">
+                {{ st }}
+              </span>
             </td>
             <td>
               <small>{{ c.developer or '—' }}</small>
             </td>
-            <td>
+            <td class="text-nowrap">
               {% if c.deli_last_date %}
                 {{ c.deli_last_date.strftime('%b %d') if c.deli_last_date is not string else c.deli_last_date }}
               {% else %}
@@ -129,7 +129,7 @@
                 <form action="{{ url_for('clients_delete', id=c.id) }}" method="POST"
                       class="d-inline"
                       data-confirm="Delete order for &quot;{{ c.client_name }}&quot;? This cannot be undone.">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="btn btn-outline-danger" type="submit" title="Delete">
                     <i class="bi bi-trash"></i>
                   </button>

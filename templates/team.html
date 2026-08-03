@@ -5,9 +5,9 @@
 <div class="row g-4">
   <div class="col-lg-7">
     <div class="card">
-      <div class="card-header">Members</div>
+      <div class="card-header"><i class="bi bi-people-fill me-2"></i>Members</div>
       <div class="card-body p-0">
-        <table class="table mb-0">
+        <table class="table table-hover mb-0">
           <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
           <tbody>
           {% for m in members %}
@@ -41,7 +41,7 @@
   </div>
   <div class="col-lg-5">
     <div class="card mb-3">
-      <div class="card-header">Send Invite</div>
+      <div class="card-header"><i class="bi bi-envelope-plus me-2"></i>Send Invite</div>
       <div class="card-body">
         <form method="post" action="{{ url_for('team_invite') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

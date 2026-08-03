@@ -56,7 +56,7 @@
       <div class="card-body">
         <ul class="list-group list-group-flush mb-3">
           {% for f in fields %}
-          <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent text-white border-secondary">
+          <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
             <span>{{ f.label }} <code class="ms-2">{{ f.field_key }}</code> <small class="text-muted">({{ f.field_type }})</small></span>
             <form method="post" action="{{ url_for('settings_fields') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -66,8 +66,7 @@
             </form>
           </li>
           {% else %}
-          <li class="list-group-item bg-transparent text-muted">No custom fields</li>
-          {% endfor %}
+          <li class="list-group-item bg-transparent text-muted">No custom fields</li>          {% endfor %}
         </ul>
         <form method="post" action="{{ url_for('settings_fields') }}" class="row g-2">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

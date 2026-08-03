@@ -1,12 +1,13 @@
-/* FiverrFlow — UI additions layered on top of base.html's inline theme tokens.
-   Toasts, kanban drag states, sidebar backdrop, sticky tables, a11y focus. */
+/* FiverrFlow — app.css
+   Component styles layered on top of base.html's design tokens:
+   toasts, mobile sidebar backdrop, sticky first-column, a11y. */
 
 /* ── Toasts ─────────────────────────────────────────────────────────────── */
 .toast-stack {
   position: fixed;
   top: 1rem;
   right: 1rem;
-  z-index: 1080;
+  z-index: 2000;
   display: flex;
   flex-direction: column;
   gap: .5rem;
@@ -18,48 +19,37 @@
   display: flex;
   align-items: flex-start;
   gap: .75rem;
-  padding: .75rem 1rem;
-  border-radius: 10px;
+  padding: .8rem 1rem;
+  border-radius: 12px;
   border: 1px solid var(--ff-border, #2a2f3a);
   background: var(--ff-surface, #171a21);
   color: var(--ff-text, #e6e8ee);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
-  animation: ff-toast-in .18s ease-out;
+  box-shadow: var(--shadow-md, 0 10px 30px rgba(0, 0, 0, .35));
+  animation: ff-toast-in .2s cubic-bezier(.2, .7, .3, 1);
 }
 @keyframes ff-toast-in {
-  from { opacity: 0; transform: translateX(16px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateX(18px) scale(.97); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
 }
-.ff-toast-out { opacity: 0; transform: translateX(16px); transition: opacity .2s, transform .2s; }
-.ff-toast-body { flex: 1; font-size: .9rem; line-height: 1.4; word-break: break-word; }
+.ff-toast-out { opacity: 0; transform: translateX(18px); transition: opacity .2s, transform .2s; }
+.ff-toast-body { flex: 1; font-size: .9rem; line-height: 1.45; word-break: break-word; }
 .ff-toast-close {
   background: none; border: 0; color: inherit;
   font-size: 1.25rem; line-height: 1; opacity: .6; cursor: pointer; padding: 0;
 }
 .ff-toast-close:hover { opacity: 1; }
-.ff-toast-success { border-left: 3px solid #22c55e; }
-.ff-toast-danger  { border-left: 3px solid #ef4444; }
-.ff-toast-warning { border-left: 3px solid #f59e0b; }
-.ff-toast-info    { border-left: 3px solid #3b82f6; }
+.ff-toast-success { border-left: 3px solid var(--ff-success, #22c55e); }
+.ff-toast-danger  { border-left: 3px solid var(--ff-danger, #ef4444); }
+.ff-toast-warning { border-left: 3px solid var(--ff-warning, #f59e0b); }
+.ff-toast-info    { border-left: 3px solid var(--ff-info, #3b82f6); }
 
-/* ── Kanban drag states ─────────────────────────────────────────────────── */
-.kanban-card { transition: opacity .15s, transform .15s; }
-.kanban-card.dragging { opacity: .45; transform: scale(.98); cursor: grabbing; }
-.kanban-card.saving { opacity: .6; pointer-events: none; }
-.kanban-col.drop-target {
-  outline: 2px dashed var(--ff-accent, #6366f1);
-  outline-offset: -4px;
-  background: color-mix(in srgb, var(--ff-accent, #6366f1) 6%, transparent);
-}
-.kanban-col { transition: background .12s; }
-
-/* ── Sidebar backdrop (mobile) ──────────────────────────────────────────── */
+/* ── Mobile sidebar backdrop ────────────────────────────────────────────── */
 .sidebar-backdrop {
   position: fixed; inset: 0;
   background: rgba(0, 0, 0, .5);
   opacity: 0; visibility: hidden;
-  transition: opacity .2s, visibility .2s;
-  z-index: 1039;
+  transition: opacity .25s, visibility .25s;
+  z-index: 99;
 }
 .sidebar-backdrop.show { opacity: 1; visibility: visible; }
 body.sidebar-open { overflow: hidden; }
@@ -68,12 +58,7 @@ body.sidebar-open { overflow: hidden; }
   body.sidebar-open { overflow: auto; }
 }
 
-/* ── Sticky table header + first column ─────────────────────────────────── */
-.table-sticky { position: relative; max-height: calc(100vh - 260px); overflow: auto; }
-.table-sticky thead th {
-  position: sticky; top: 0; z-index: 2;
-  background: var(--ff-surface, #171a21);
-}
+/* ── Sticky first column in wide tables ─────────────────────────────────── */
 .table-sticky tbody th:first-child,
 .table-sticky td.sticky-col,
 .table-sticky th.sticky-col {
@@ -82,7 +67,7 @@ body.sidebar-open { overflow: hidden; }
 }
 .table-sticky thead th.sticky-col { z-index: 3; }
 
-/* ── Accessibility ──────────────────────────────────────────────────────── */
+/* ── A11y ───────────────────────────────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--ff-accent, #6366f1);
   outline-offset: 2px;
@@ -90,7 +75,7 @@ body.sidebar-open { overflow: hidden; }
 }
 .skip-link {
   position: absolute; left: -9999px;
-  top: .5rem; z-index: 1090;
+  top: .5rem; z-index: 3000;
   padding: .5rem .9rem; border-radius: 6px;
   background: var(--ff-accent, #6366f1); color: #fff;
 }
@@ -99,10 +84,8 @@ body.sidebar-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
+  .reveal { opacity: 1; transform: none; }
 }
-
-/* ── Empty states ───────────────────────────────────────────────────────── */
-.empty-state { text-align: center; padding: 3rem 1rem; color: var(--ff-muted, #8b93a5); }
-.empty-state .bi { display: block; margin-bottom: .5rem; }

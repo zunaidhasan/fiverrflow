@@ -3,7 +3,11 @@
 {% block page_title %}{% if from_presale %}Mark as Sold{% elif client and client.id is defined %}Edit Order{% else %}Add Order{% endif %}{% endblock %}
 {% block content %}
 <div style="max-width:900px">
-  <div class="card">
+  <div class="card reveal">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>{% if from_presale %}Mark as Sold{% elif client and client.id is defined %}Edit Order{% else %}Add Order{% endif %}</span>
+      <a href="{{ url_for('clients') if not from_presale else url_for('leads') }}" class="btn btn-sm btn-outline-secondary">← Back</a>
+    </div>
     <div class="card-body">
       <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

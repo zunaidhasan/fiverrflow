@@ -3,43 +3,43 @@
 {% block page_title %}Dashboard{% endblock %}
 {% block topbar_actions %}
   <a href="{{ url_for('leads_new') }}" class="btn btn-primary btn-sm">
-    <i class="bi bi-plus-lg me-1"></i>New Lead
+    <i class="bi bi-plus-lg me-1"></i><span>New Lead</span>
   </a>
   <a href="{{ url_for('clients_new') }}" class="btn btn-outline-secondary btn-sm">
-    <i class="bi bi-bag-plus me-1"></i>New Order
+    <i class="bi bi-bag-plus me-1"></i><span>New Order</span>
   </a>
 {% endblock %}
 
 {% block content %}
-<div class="row g-3 mb-4">
-  <div class="col-6 col-lg-3">
+<div class="row g-3 mb-4 stagger">
+  <div class="col-6 col-xl-3">
     <div class="stat-card accent">
       <div class="stat-label">Presales Quoted</div>
-      <div class="stat-value">${{ "{:,.0f}".format(total_quoted|float) }}</div>
+      <div class="stat-value"><span data-count="{{ total_quoted|int }}" data-prefix="$">$0</span></div>
       <div class="stat-sub">{{ total_presales }} leads total</div>
       <i class="bi bi-chat-quote stat-icon"></i>
     </div>
   </div>
-  <div class="col-6 col-lg-3">
+  <div class="col-6 col-xl-3">
     <div class="stat-card blue">
       <div class="stat-label">Sold Revenue</div>
-      <div class="stat-value">${{ "{:,.0f}".format(total_revenue|float) }}</div>
+      <div class="stat-value"><span data-count="{{ total_revenue|int }}" data-prefix="$">$0</span></div>
       <div class="stat-sub">{{ total_sold }} orders · net ${{ "{:,.0f}".format(won_net|float) }}</div>
       <i class="bi bi-trophy stat-icon"></i>
     </div>
   </div>
-  <div class="col-6 col-lg-3">
+  <div class="col-6 col-xl-3">
     <div class="stat-card">
       <div class="stat-label">Open WIP</div>
-      <div class="stat-value">{{ open_wip }}</div>
+      <div class="stat-value"><span data-count="{{ open_wip }}">0</span></div>
       <div class="stat-sub">In progress / revision</div>
       <i class="bi bi-hourglass-split stat-icon"></i>
     </div>
   </div>
-  <div class="col-6 col-lg-3">
+  <div class="col-6 col-xl-3">
     <div class="stat-card {% if overdue > 0 %}warn{% endif %}">
       <div class="stat-label">Overdue Delivery</div>
-      <div class="stat-value">{{ overdue }}</div>
+      <div class="stat-value"><span data-count="{{ overdue }}">0</span></div>
       <div class="stat-sub">{% if overdue > 0 %}Needs attention{% else %}All on track{% endif %}</div>
       <i class="bi bi-exclamation-triangle stat-icon"></i>
     </div>
@@ -48,7 +48,7 @@
 
 <div class="row g-3">
   <div class="col-lg-6">
-    <div class="card h-100">
+    <div class="card card-hover h-100">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Presales by Status</span>
         <a href="{{ url_for('leads') }}" class="btn btn-sm btn-outline-secondary">View all</a>
@@ -69,9 +69,10 @@
             {% for row in status_breakdown %}
             <tr>
               <td>
-                <span class="badge badge-status">{{ row.status or '—' }}</span>
+                {% set st = row.status or '' %}
+                <span class="badge {% if st == 'Sold' %}badge-sold{% elif st == 'Passed' %}badge-passed{% elif st == 'Brief Submitted' %}badge-brief{% elif st == 'Replied' %}badge-replied{% elif st == 'Proposal Sent' %}badge-proposal{% else %}badge-new{% endif %}">{{ st or '—' }}</span>
                 <div class="status-bar-wrap">
-                  <div class="status-bar" style="width: {{ (((row.cnt or 0)|float) / (max_cnt|float) * 100)|round }}%"></div>
+                  <div class="status-bar" data-width="{{ ((((row.cnt or 0)|float) / (max_cnt|float)) * 100)|round }}"></div>
                 </div>
               </td>
               <td class="fw-semibold">{{ row.cnt }}</td>
@@ -87,17 +88,19 @@
         </div>
         {% endif %}
       </div>
+    </div>
+  </div>
   <div class="col-lg-6">
-    <div class="card h-100">
+    <div class="card card-hover h-100">
       <div class="card-header">Recent Activity</div>
       <div class="card-body p-0">
         {% if recent %}
           {% for a in recent %}
           <div class="activity-item">
             <div class="activity-dot"></div>
-            <div>
-              <div>{{ a.description }}</div>
-              <div class="activity-time">{{ a.created_at }}</div>
+            <div style="min-width:0">
+              <div class="text-truncate">{{ a.description }}</div>
+              <div class="activity-time"><i class="bi bi-clock me-1"></i><span data-relative-time="{{ a.created_at.isoformat() if a.created_at else '' }}">{{ a.created_at if a.created_at else '' }}</span></div>
             </div>
           </div>
           {% endfor %}

@@ -3,8 +3,8 @@
 {% block page_title %}Import CSV{% endblock %}
 {% block content %}
 <div style="max-width:640px">
-  <div class="card mb-3">
-    <div class="card-header">Upload CSV</div>
+  <div class="card reveal">
+    <div class="card-header"><i class="bi bi-upload me-2"></i>Upload CSV</div>
     <div class="card-body">
       <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -23,14 +23,14 @@
       </form>
     </div>
   </div>
-  <div class="card mb-3">
-    <div class="card-header">Presales columns</div>
+  <div class="card reveal">
+    <div class="card-header"><i class="bi bi-file-earmark-text me-2"></i>Presales columns</div>
     <div class="card-body">
       <code class="text-accent">Date, Shift, Source, URL, Client Username, Profile Name, Category, Quoted Amount, Status</code>
     </div>
   </div>
-  <div class="card">
-    <div class="card-header">Sold columns</div>
+  <div class="card reveal">
+    <div class="card-header"><i class="bi bi-bag-check me-2"></i>Sold columns</div>
     <div class="card-body">
       <code class="text-accent">Date, Account, Service-Type, Project Name, Client Name, Status, Assign, Leader, Comment, Developer, Deli_Last_Date, Sheet link, Order Amount</code>
     </div>
