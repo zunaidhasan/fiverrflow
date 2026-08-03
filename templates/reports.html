@@ -191,7 +191,7 @@
                             <td>{{ lead.category or '-' }}</td>
                             <td>${{ "{:,.0f}".format(lead.quoted_amount or 0) }}</td>
                             <td>
-                                <span class="badge bg-{{ lead.STATUS_COLORS.get(lead.status, 'secondary') }}">
+                                <span class="badge bg-{{ status_colors.get(lead.status, 'secondary') }}">
                                     {{ lead.status }}
                                 </span>
                             </td>

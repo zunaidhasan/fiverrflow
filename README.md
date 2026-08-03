@@ -22,6 +22,7 @@ Two linked pipelines: a lead is captured in `presales`, worked through the pipel
 - **Sold orders** — delivery dates, overdue tracking, assigned leader/developer, order and bonus amounts, net-of-commission totals.
 - **Convert lead → order** — `/leads/<id>/mark-sold` carries the lead across and links it via `sold.presale_id`.
 - **Dashboard** — pipeline counts, quoted totals, revenue, overdue deliveries, recent activity.
+- **Reports** — conversion rates, category breakdown, and monthly-lead performance.
 - **CSV import/export** — for both presales and sold, with money parsing that tolerates `$6,000.00` and `6,000`.
 - **Custom fields** — per-entity fields stored in a `JSONB` column, managed at `/settings/fields`.
 - **Configurable stages** — add, reorder, and recolour pipeline stages at `/settings/stages`.
@@ -100,6 +101,8 @@ gunicorn wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout
 
 Keep `DB_POOL_MAX` at or above the thread count per worker, and mind Supabase's own connection ceiling: `workers × threads` is the concurrency you are asking it to support.
 
+Query helpers retry once after an `OperationalError` by rebuilding the pool — free-tier instances that sleep and wake with a stale pool recover on the next request instead of 500ing.
+
 `/health` runs `SELECT 1` and returns `{"status":"ok","database":"up"}`, or 503 when the database is unreachable. It is wired to `healthCheckPath`.
 
 ## Routes
@@ -108,6 +111,7 @@ Keep `DB_POOL_MAX` at or above the thread count per worker, and mind Supabase's 
 |---|---|
 | `/` `/login` `/register` `/logout` | Auth. Login is rate-limited to 10/min, register to 5/hour. |
 | `/dashboard` | Aggregates and recent activity |
+| `/reports` | Conversion, category, and monthly performance |
 | `/leads` | Presales list; `?view=kanban` for the board |
 | `/leads/new` `/leads/<id>/edit` `/leads/<id>/delete` | Lead CRUD |
 | `/leads/<id>/status` `/leads/<id>/stage` | JSON endpoints; require `X-CSRFToken` |
@@ -148,6 +152,16 @@ Migrations are **forward-only and additive** — `ADD COLUMN`, `CREATE INDEX`, `
 
 Both data scripts **dry-run by default** and require `--apply` to write. `dedupe_sold.py` writes a CSV backup to `backups/` before deleting anything.
 
+## Tests
+
+Pure helpers (money/date parsing, URL normalization, password-verify, redirect
+guards) are unit-tested and need no database:
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q
+```
+
 ## Project layout
 
 ```
@@ -157,5 +171,17 @@ migrations/         ordered .sql, forward-only
 scripts/            operational scripts, dry-run by default
 static/css|js/      extracted assets, cache-busted by mtime
 templates/          Jinja2, all extending base.html
+tests/              pytest unit tests for pure helpers
 instance/           legacy SQLite (gitignored, reference only)
+.env.example        documented env vars — copy to .env and fill in
 ```
+
+## Environment variables
+
+| Variable | Purpose | Required |
+|---|---|---|
+| `DATABASE_URL` | Supabase pooler URI (sslmode added automatically) | Yes |
+| `SECRET_KEY` | Session signing; app refuses to start in prod without it | Yes (prod) |
+| `APP_ENV` | `production` forces Secure cookies + HSTS | No (default `development`) |
+| `DB_POOL_MAX` | Pooled connections per worker (keep ≥ threads) | No (default `8`) |
+| `COMMISSION_RATE` | Net revenue share, e.g. `0.8` for 80% | No (default `0.8`) |

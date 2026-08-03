@@ -410,6 +410,10 @@
        class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
       <i class="bi bi-speedometer2"></i> Dashboard
     </a>
+    <a href="{{ url_for('reports') }}"
+       class="nav-link {% if request.endpoint == 'reports' %}active{% endif %}">
+      <i class="bi bi-graph-up-arrow"></i> Reports
+    </a>
 
     <div class="nav-section">Sales</div>
     <a href="{{ url_for('leads') }}"

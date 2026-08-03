@@ -4,8 +4,10 @@ import io
 import json
 import hashlib
 import logging
+import re
 import secrets
 from datetime import datetime, date, timedelta
+from decimal import Decimal, InvalidOperation
 from functools import wraps
 from contextlib import contextmanager
 
@@ -18,6 +20,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
+from psycopg2 import OperationalError
 
 load_dotenv()
 
@@ -75,12 +78,13 @@ def _normalize_database_url(url: str) -> str:
     if not url:
         raise RuntimeError(
             "DATABASE_URL is not set. "
-            "In Vercel → Settings → Environment Variables, set DATABASE_URL to your "
+            "In Render → Environment, set DATABASE_URL to your "
             "Supabase pooler URI (port 6543), e.g. "
             "postgresql://postgres.REF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres?sslmode=require"
         )
-    # Common mistake: port glued into host as "6543@aws-..." or "6033@aws-..."
-    if "@aws-" in url.split("@")[-1] and url.count("@") > 1:
+    # Common mistake: port glued into the host as "...@6543@aws-0-region...".
+    # More than one '@' also usually means the password was not URL-encoded.
+    if url.count("@") > 1 and re.search(r"@\d+@aws-", url):
         raise RuntimeError(
             "DATABASE_URL has more than one '@'. "
             "URL-encode special characters in the password (@ → %40). "
@@ -158,6 +162,25 @@ import atexit
 atexit.register(close_pool)
 
 
+def _db_retry(fn):
+    """Render free instances sleep; pooled TCP connections go stale and the
+    first query after a wake hits a dead socket. Close the pool and retry once.
+    """
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except OperationalError:
+            log.warning(
+                "OperationalError in %s — rebuilding pool and retrying once",
+                fn.__name__, exc_info=True,
+            )
+            close_pool()
+            return fn(*args, **kwargs)
+    return wrapper
+
+
+@_db_retry
 def q(sql, args=None):
     with get_conn() as conn:
         with conn.cursor() as cur:
@@ -170,6 +193,7 @@ def q1(sql, args=None):
     return rows[0] if rows else None
 
 
+@_db_retry
 def run(sql, args=None):
     with get_conn() as conn:
         with conn.cursor() as cur:
@@ -184,6 +208,7 @@ def scalar(sql, args=None):
     return list(row.values())[0]
 
 
+@_db_retry
 def insert_returning(sql, args=None):
     with get_conn() as conn:
         with conn.cursor() as cur:
@@ -243,23 +268,30 @@ def parse_date(val):
     return None
 
 def parse_money(val):
-    """Parse amounts like '$6,000.00', '6,000', '6000.50', '' → float."""
+    """Parse amounts like '$6,000.00', '6,000', '6000.50', '' → Decimal.
+
+    Money stays in Decimal (matching the DB's NUMERIC columns) so it never
+    passes through binary floats. Display formatting lives in the `money`
+    filter, which handles Decimal via float().
+    """
     if val is None or val == "":
-        return 0.0
+        return Decimal("0")
+    if isinstance(val, Decimal):
+        return val
     if isinstance(val, (int, float)):
-        return float(val)
+        return Decimal(str(val))
     s = str(val).strip()
     if not s:
-        return 0.0
-    # Remove currency symbols, spaces, and thousands separators
+        return Decimal("0")
+    # Remove currency symbols, spaces, and thousands separators.
+    # European grouping (1.234,56) is intentionally not supported.
     for ch in ("$", "€", "£", "₹", "৳", "USD", "usd", "BDT", "bdt", " "):
         s = s.replace(ch, "")
     s = s.replace(",", "")  # 6,000.00 → 6000.00
-    # Handle European style 6.000,50 → skip if already cleaned
     try:
-        return float(s)
-    except ValueError:
-        return 0.0
+        return Decimal(s)
+    except InvalidOperation:
+        return Decimal("0")
 
 def current_user():
     """Cached per request — this runs on every response via inject_globals."""
@@ -782,6 +814,87 @@ def dashboard():
         status_breakdown=status_breakdown,
         stage_stats=stage_stats,
         recent=recent,
+    )
+
+
+# ── Reports ───────────────────────────────────────────────────────────────────
+
+STATUS_COLORS = {
+    "New": "secondary",
+    "Brief Submitted": "info",
+    "Replied": "warning",
+    "Proposal Sent": "primary",
+    "Sold": "success",
+    "Passed": "secondary",
+}
+
+
+@app.route("/reports")
+@login_required
+def reports():
+    """Conversion, category, and monthly performance — wired to reports.html."""
+    today = date.today()
+    month_start = today.replace(day=1)
+    month_end = today + timedelta(days=1)
+
+    total_leads = int(scalar("SELECT COUNT(*) FROM presales") or 0)
+    briefs_submitted = int(
+        scalar("SELECT COUNT(*) FROM presales WHERE status='Brief Submitted'") or 0
+    )
+    proposals_sent = int(
+        scalar("SELECT COUNT(*) FROM presales WHERE status='Proposal Sent'") or 0
+    )
+    sold_count = int(scalar("SELECT COUNT(*) FROM sold") or 0)
+    brief_rate = (briefs_submitted / total_leads * 100) if total_leads else 0.0
+    conversion_rate = (sold_count / total_leads * 100) if total_leads else 0.0
+
+    total_revenue = float(
+        scalar(
+            "SELECT COALESCE(SUM(order_amount + bonus_amount),0) * %s FROM sold",
+            (COMMISSION_RATE,),
+        )
+        or 0
+    )
+    total_quoted = float(
+        scalar(
+            "SELECT COALESCE(SUM(quoted_amount),0) FROM presales WHERE status != 'Passed'"
+        )
+        or 0
+    )
+
+    # A presale counts as "sold" here only when it has been converted into a
+    # sold order (presale_id link). Quoted sums feed the per-category table.
+    rows = q(
+        """SELECT COALESCE(NULLIF(category,''),'Other') AS category,
+                  COUNT(*) AS total,
+                  COALESCE(SUM(CASE WHEN id IN
+                      (SELECT presale_id FROM sold WHERE presale_id IS NOT NULL)
+                      THEN 1 ELSE 0 END),0) AS sold,
+                  COALESCE(SUM(quoted_amount),0) AS quoted
+           FROM presales GROUP BY 1 ORDER BY quoted DESC"""
+    )
+    by_category = {r["category"]: r for r in rows}
+
+    monthly_leads = q(
+        """SELECT * FROM presales
+           WHERE date >= %s AND date < %s
+           ORDER BY date DESC, id DESC""",
+        (month_start, month_end),
+    )
+
+    return render_template(
+        "reports.html",
+        total_leads=total_leads,
+        briefs_submitted=briefs_submitted,
+        brief_rate=brief_rate,
+        proposals_sent=proposals_sent,
+        sold_count=sold_count,
+        conversion_rate=conversion_rate,
+        total_revenue=total_revenue,
+        total_quoted=total_quoted,
+        by_category=by_category,
+        monthly_leads=monthly_leads,
+        status_colors=STATUS_COLORS,
     )
 
 

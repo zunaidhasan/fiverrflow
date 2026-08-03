@@ -1,0 +1,21 @@
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Local data / backups
+instance/
+backups/
+
+# Tooling
+.pytest_cache/
+.coverage
+htmlcov/
+.DS_Store
