@@ -1,0 +1,12 @@
+# Pinned to the versions actually installed and tested locally.
+Flask==3.0.0
+Werkzeug==3.0.1
+python-dotenv==1.2.2
+psycopg2-binary==2.9.9
+Flask-WTF==1.2.1
+Flask-Limiter==3.8.0
+
+# WSGI servers: gunicorn for Linux hosts (Render/Railway/Fly),
+# waitress for local prod-parity testing on Windows (gunicorn needs fcntl).
+gunicorn==23.0.0
+waitress==3.0.0

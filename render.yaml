@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: fiverrflow
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # 2 workers x 4 threads = 8 concurrent requests, matching DB_POOL_MAX.
+    startCommand: gunicorn wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 60 --access-logfile - --error-logfile -
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false        # set in the Render dashboard; never commit this
+      - key: COMMISSION_RATE
+        value: "0.8"
+      - key: DB_POOL_MAX
+        value: "8"
