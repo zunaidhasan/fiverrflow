@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Page not found{% endblock %}
+{% block page_title %}Page not found{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <div class="empty-state">
+      <i class="bi bi-compass" style="font-size:3rem;opacity:.3"></i>
+      <h2 class="h4 mt-3">404 — Page not found</h2>
+      <p class="text-muted">That page doesn't exist, or it may have moved.</p>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-sm mt-2">
+        <i class="bi bi-house me-1"></i>Back to dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

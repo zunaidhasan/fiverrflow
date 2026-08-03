@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}Presales{% endblock %}
+{% block page_title %}Presales{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('leads', view='list') }}" class="btn btn-sm {% if view != 'kanban' %}btn-primary{% else %}btn-outline-secondary{% endif %}">List</a>
+  <a href="{{ url_for('leads', view='kanban') }}" class="btn btn-sm {% if view == 'kanban' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Kanban</a>
+  <a href="{{ url_for('import_data') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-upload"></i></a>
+  <a href="{{ url_for('leads_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Add Lead</a>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <small class="text-muted">{{ total_leads }} leads · ${{ "{:,.0f}".format(total_quoted) }} quoted</small>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-2">
+      <input type="hidden" name="view" value="{{ view }}">
+      <div class="col-md-3">
+        <input type="text" class="form-control" name="search" placeholder="Search client, profile..." value="{{ search }}">
+      </div>
+      <div class="col-md-2">
+        <select class="form-select" name="status">
+          <option value="">All Status</option>
+          {% for s in ['New','Brief Submitted','Replied','Proposal Sent','Sold','Passed'] %}
+          <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select" name="shift">
+          <option value="">All Shifts</option>
+          {% for s in ['Morning','Evening','Night'] %}
+          <option value="{{ s }}" {% if shift_filter == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select" name="stage">
+          <option value="">All Stages</option>
+          {% for s in stages %}
+          <option value="{{ s.key }}" {% if stage_filter == s.key %}selected{% endif %}>{{ s.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <input type="month" class="form-control" name="month" value="{{ month_filter }}">
+      </div>
+      <div class="col-md-1">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-filter"></i></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if view == 'kanban' %}
+<div class="kanban-board" id="kanban">
+  {% for s in stages %}
+  <div class="kanban-col" data-stage="{{ s.key }}">
+    <div class="kanban-col-header">
+      <span style="color:{{ s.color or '#9ca3af' }}">{{ s.label }}</span>
+      <span class="badge bg-secondary">{{ board.get(s.key, [])|length }}</span>
+    </div>
+    {% for lead in board.get(s.key, []) %}
+    <div class="kanban-card" draggable="true" data-id="{{ lead.id }}">
+      <div class="deal-title">{{ lead.client_username or '—' }}</div>
+      <div class="deal-meta">{{ lead.profile_name or '' }} · {{ lead.category or '' }}</div>
+      <div class="deal-value">${{ "{:,.0f}".format(lead.quoted_amount or 0) }}</div>
+      <div class="mt-2 d-flex gap-1">
+        <a href="{{ url_for('leads_edit', id=lead.id) }}" class="btn btn-sm btn-outline-secondary py-0">Edit</a>
+        {% if lead.status != 'Sold' %}
+        <a href="{{ url_for('leads_mark_sold', id=lead.id) }}" class="btn btn-sm btn-outline-success py-0">Sold</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="card-body p-0">
+    {% if leads %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Date</th><th>Shift</th><th>Source</th><th>Client</th><th>Profile</th>
+            <th>Category</th><th>Amount</th><th>Status</th><th>Stage</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lead in leads %}
+          <tr>
+            <td>{{ lead.date.strftime('%b %d') if lead.date else '—' }}</td>
+            <td><span class="badge bg-secondary">{{ lead.shift or '—' }}</span></td>
+            <td>{{ lead.source or '—' }}</td>
+            <td>
+              {% if lead.url %}
+              <a href="{{ lead.url }}" target="_blank" class="text-decoration-none text-accent">{{ lead.client_username }}</a>
+              {% else %}{{ lead.client_username or '—' }}{% endif %}
+            </td>
+            <td>{{ lead.profile_name or '—' }}</td>
+            <td>{{ lead.category or '—' }}</td>
+            <td class="text-accent fw-semibold">${{ "{:,.0f}".format(lead.quoted_amount or 0) }}</td>
+            <td>
+              <select class="form-select form-select-sm status-select" data-id="{{ lead.id }}" style="min-width:120px">
+                {% for s in ['New','Brief Submitted','Replied','Proposal Sent','Sold','Passed'] %}
+                <option value="{{ s }}" {% if lead.status == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <select class="form-select form-select-sm stage-select" data-id="{{ lead.id }}" style="min-width:110px">
+                {% for s in stages %}
+                <option value="{{ s.key }}" {% if lead.stage_key == s.key %}selected{% endif %}>{{ s.label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a href="{{ url_for('leads_edit', id=lead.id) }}" class="btn btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+                {% if lead.status != 'Sold' %}
+                <a href="{{ url_for('leads_mark_sold', id=lead.id) }}" class="btn btn-outline-success" title="Mark as Sold"><i class="bi bi-bag-check"></i></a>
+                {% endif %}
+                <form action="{{ url_for('leads_delete', id=lead.id) }}" method="POST" class="d-inline" data-confirm="Delete lead &quot;{{ lead.client_username }}&quot;? This cannot be undone.">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-inbox" style="font-size:2.5rem;opacity:.3"></i>
+      <p class="mt-2">No leads found</p>
+      <a href="{{ url_for('leads_new') }}" class="btn btn-primary btn-sm">Add Lead</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Every write goes through here so failures can never pass silently.
+// Previously these fetches ignored the response: if a save failed, the control
+// still showed the new value while the database kept the old one.
+const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+async function postJSON(url, payload) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try { const j = await res.json(); if (j.error) detail = j.error; } catch (_) {}
+    throw new Error(detail);
+  }
+  return res.json().catch(() => ({}));
+}
+
+function bindSelect(selector, path, key) {
+  document.querySelectorAll(selector).forEach(el => {
+    el.dataset.prev = el.value;
+    el.addEventListener('change', async function () {
+      const previous = this.dataset.prev;
+      this.disabled = true;
+      try {
+        await postJSON(`/leads/${this.dataset.id}/${path}`, {[key]: this.value});
+        this.dataset.prev = this.value;
+        window.ffToast?.(`${key === 'status' ? 'Status' : 'Stage'} updated`, 'success');
+      } catch (err) {
+        this.value = previous;          // revert so the UI matches the database
+        window.ffToast?.(`Could not save: ${err.message}`, 'danger');
+      } finally {
+        this.disabled = false;
+      }
+    });
+  });
+}
+
+bindSelect('.status-select', 'status', 'status');
+bindSelect('.stage-select', 'stage', 'stage');
+
+// Kanban drag-drop: optimistic move, revert on failure, no full page reload.
+const board = document.getElementById('kanban');
+if (board) {
+  let dragId = null;
+  let dragCard = null;
+
+  board.querySelectorAll('.kanban-card').forEach(card => {
+    card.addEventListener('dragstart', e => {
+      dragId = card.dataset.id;
+      dragCard = card;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  });
+
+  board.querySelectorAll('.kanban-col').forEach(col => {
+    // Counter-based tracking: dragleave also fires when crossing child
+    // elements, which made the drop outline flicker.
+    let depth = 0;
+    const clear = () => { depth = 0; col.classList.remove('drop-target'); };
+
+    col.addEventListener('dragenter', e => { e.preventDefault(); depth++; col.classList.add('drop-target'); });
+    col.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    col.addEventListener('dragleave', () => { if (--depth <= 0) clear(); });
+
+    col.addEventListener('drop', async e => {
+      e.preventDefault();
+      clear();
+      if (!dragId || !dragCard) return;
+
+      const card = dragCard;
+      const origin = card.parentElement;
+      const nextSibling = card.nextSibling;
+      const body = col.querySelector('.kanban-body') || col;
+
+      body.appendChild(card);            // optimistic
+      card.classList.add('saving');
+      try {
+        await postJSON(`/leads/${dragId}/stage`, {stage: col.dataset.stage});
+        window.ffToast?.('Stage updated', 'success');
+      } catch (err) {
+        origin.insertBefore(card, nextSibling);   // put it back exactly
+        window.ffToast?.(`Could not move card: ${err.message}`, 'danger');
+      } finally {
+        card.classList.remove('saving');
+        dragId = null;
+        dragCard = null;
+      }
+    });
+  });
+}
+</script>
+{% endblock %}

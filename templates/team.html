@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Team{% endblock %}
+{% block page_title %}Team & Invites{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">Members</div>
+      <div class="card-body p-0">
+        <table class="table mb-0">
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
+          <tbody>
+          {% for m in members %}
+            <tr>
+              <td>{{ m.name }}</td>
+              <td>{{ m.email }}</td>
+              <td>
+                <form method="post" action="{{ url_for('team_role', uid=m.id) }}" class="d-flex gap-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <select name="role" class="form-select form-select-sm" style="width:110px">
+                    <option value="member" {% if m.role=='member' %}selected{% endif %}>member</option>
+                    <option value="admin" {% if m.role=='admin' %}selected{% endif %}>admin</option>
+                  </select>
+                  <button class="btn btn-sm btn-outline-secondary">Save</button>
+                </form>
+              </td>
+              <td>
+                {% if m.id != current_user.id %}
+                <form method="post" action="{{ url_for('team_delete', uid=m.id) }}" data-confirm="Remove {{ m.name }} from the team?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-sm btn-outline-danger">Remove</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-header">Send Invite</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('team_invite') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-2">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Role</label>
+            <select name="role" class="form-select">
+              <option value="member">member</option>
+              <option value="admin">admin</option>
+            </select>
+          </div>
+          <button class="btn btn-primary">Create Invite Link</button>
+        </form>
+        <p class="text-muted mt-2 mb-0" style="font-size:.75rem">Invite link is shown in the flash message after create. Share it with the teammate.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Pending Invites</div>
+      <div class="card-body p-0">
+        <table class="table mb-0 table-sm">
+          <thead><tr><th>Email</th><th>Role</th><th></th></tr></thead>
+          <tbody>
+          {% for i in invites %}
+            <tr>
+              <td>{{ i.email }}</td>
+              <td>{{ i.role }}</td>
+              <td>
+                <form method="post" action="{{ url_for('invite_revoke', iid=i.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-sm btn-outline-danger">Revoke</button>
+                </form>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" class="text-muted">No pending invites</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

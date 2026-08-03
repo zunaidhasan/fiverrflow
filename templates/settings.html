@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">Pipeline Stages</div>
+      <div class="card-body">
+        <table class="table table-sm">
+          <thead><tr><th>Order</th><th>Key</th><th>Label</th><th>Color</th><th></th></tr></thead>
+          <tbody>
+          {% for s in stages %}
+            <tr>
+              <td>{{ s.sort_order }}</td>
+              <td><code>{{ s.key }}</code></td>
+              <td>
+                <form method="post" action="{{ url_for('settings_stages') }}" class="d-flex gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="action" value="rename">
+                  <input type="hidden" name="id" value="{{ s.id }}">
+                  <input class="form-control form-control-sm" name="label" value="{{ s.label }}">
+                  <input class="form-control form-control-sm" type="color" name="color" value="{{ s.color or '#6b7280' }}" style="width:48px">
+                  <button class="btn btn-sm btn-outline-secondary">Save</button>
+                </form>
+              </td>
+              <td>
+                <form method="post" action="{{ url_for('settings_stages') }}" data-confirm="Delete this pipeline stage? Leads in it will need reassigning.">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="id" value="{{ s.id }}">
+                  <button class="btn btn-sm btn-outline-danger">Del</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        <hr>
+        <form method="post" action="{{ url_for('settings_stages') }}" class="row g-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="add">
+          <div class="col-4"><input class="form-control" name="key" placeholder="key (e.g. followup)" required></div>
+          <div class="col-4"><input class="form-control" name="label" placeholder="Label" required></div>
+          <div class="col-2"><input class="form-control" type="color" name="color" value="#4f8cff"></div>
+          <div class="col-2"><button class="btn btn-primary w-100">Add</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    {% for entity, fields, title in [('presale', presale_fields, 'Presale Custom Fields'), ('sold', sold_fields, 'Sold Custom Fields')] %}
+    <div class="card mb-4">
+      <div class="card-header">{{ title }}</div>
+      <div class="card-body">
+        <ul class="list-group list-group-flush mb-3">
+          {% for f in fields %}
+          <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent text-white border-secondary">
+            <span>{{ f.label }} <code class="ms-2">{{ f.field_key }}</code> <small class="text-muted">({{ f.field_type }})</small></span>
+            <form method="post" action="{{ url_for('settings_fields') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="id" value="{{ f.id }}">
+              <button class="btn btn-sm btn-outline-danger">Remove</button>
+            </form>
+          </li>
+          {% else %}
+          <li class="list-group-item bg-transparent text-muted">No custom fields</li>
+          {% endfor %}
+        </ul>
+        <form method="post" action="{{ url_for('settings_fields') }}" class="row g-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="add">
+          <input type="hidden" name="entity" value="{{ entity }}">
+          <div class="col-3"><input class="form-control form-control-sm" name="field_key" placeholder="key" required></div>
+          <div class="col-3"><input class="form-control form-control-sm" name="label" placeholder="Label" required></div>
+          <div class="col-2">
+            <select class="form-select form-select-sm" name="field_type">
+              <option value="text">text</option>
+              <option value="number">number</option>
+              <option value="url">url</option>
+              <option value="date">date</option>
+              <option value="select">select</option>
+            </select>
+          </div>
+          <div class="col-3"><input class="form-control form-control-sm" name="options" placeholder="a,b,c if select"></div>
+          <div class="col-1"><button class="btn btn-sm btn-primary w-100">+</button></div>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

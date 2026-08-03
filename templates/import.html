@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Import CSV{% endblock %}
+{% block page_title %}Import CSV{% endblock %}
+{% block content %}
+<div style="max-width:640px">
+  <div class="card mb-3">
+    <div class="card-header">Upload CSV</div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3">
+          <label class="form-label">Type</label>
+          <select name="kind" class="form-select" required>
+            <option value="presales">Presales sheet</option>
+            <option value="sold">Sold / Orders sheet</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">CSV File</label>
+          <input type="file" name="csv_file" class="form-control" accept=".csv" required>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Import</button>
+      </form>
+    </div>
+  </div>
+  <div class="card mb-3">
+    <div class="card-header">Presales columns</div>
+    <div class="card-body">
+      <code class="text-accent">Date, Shift, Source, URL, Client Username, Profile Name, Category, Quoted Amount, Status</code>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">Sold columns</div>
+    <div class="card-body">
+      <code class="text-accent">Date, Account, Service-Type, Project Name, Client Name, Status, Assign, Leader, Comment, Developer, Deli_Last_Date, Sheet link, Order Amount</code>
+    </div>
+  </div>
+</div>
+{% endblock %}

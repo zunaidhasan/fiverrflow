@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('leads_new') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>New Lead
+  </a>
+  <a href="{{ url_for('clients_new') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-bag-plus me-1"></i>New Order
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card accent">
+      <div class="stat-label">Presales Quoted</div>
+      <div class="stat-value">${{ "{:,.0f}".format(total_quoted|float) }}</div>
+      <div class="stat-sub">{{ total_presales }} leads total</div>
+      <i class="bi bi-chat-quote stat-icon"></i>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card blue">
+      <div class="stat-label">Sold Revenue</div>
+      <div class="stat-value">${{ "{:,.0f}".format(total_revenue|float) }}</div>
+      <div class="stat-sub">{{ total_sold }} orders · net ${{ "{:,.0f}".format(won_net|float) }}</div>
+      <i class="bi bi-trophy stat-icon"></i>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-label">Open WIP</div>
+      <div class="stat-value">{{ open_wip }}</div>
+      <div class="stat-sub">In progress / revision</div>
+      <i class="bi bi-hourglass-split stat-icon"></i>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card {% if overdue > 0 %}warn{% endif %}">
+      <div class="stat-label">Overdue Delivery</div>
+      <div class="stat-value">{{ overdue }}</div>
+      <div class="stat-sub">{% if overdue > 0 %}Needs attention{% else %}All on track{% endif %}</div>
+      <i class="bi bi-exclamation-triangle stat-icon"></i>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Presales by Status</span>
+        <a href="{{ url_for('leads') }}" class="btn btn-sm btn-outline-secondary">View all</a>
+      </div>
+      <div class="card-body p-0">
+        {% if status_breakdown %}
+        {% set counts = status_breakdown|map(attribute='cnt')|list %}
+        {% set max_cnt = (counts|max) if counts else 1 %}
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th style="width:40%">Status</th>
+              <th>Count</th>
+              <th>Quoted</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in status_breakdown %}
+            <tr>
+              <td>
+                <span class="badge badge-status">{{ row.status or '—' }}</span>
+                <div class="status-bar-wrap">
+                  <div class="status-bar" style="width: {{ (((row.cnt or 0)|float) / (max_cnt|float) * 100)|round }}%"></div>
+                </div>
+              </td>
+              <td class="fw-semibold">{{ row.cnt }}</td>
+              <td class="text-accent fw-semibold">${{ "{:,.0f}".format((row.val or 0)|float) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-inbox" style="font-size:2rem"></i>
+          <p class="mt-2 mb-0">No presales yet</p>
+        </div>
+        {% endif %}
+      </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header">Recent Activity</div>
+      <div class="card-body p-0">
+        {% if recent %}
+          {% for a in recent %}
+          <div class="activity-item">
+            <div class="activity-dot"></div>
+            <div>
+              <div>{{ a.description }}</div>
+              <div class="activity-time">{{ a.created_at }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-clock-history" style="font-size:2rem"></i>
+          <p class="mt-2 mb-1">No activity yet</p>
+          <small>Creates, updates, and imports will show here</small>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

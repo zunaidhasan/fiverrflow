@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Sold / Orders{% endblock %}
+{% block page_title %}Sold / Orders{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('clients_new') }}" class="btn btn-success btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Add Order
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <small class="text-muted">
+    {{ clients|length }} orders ·
+    ${{ "{:,.0f}".format(total_orders|float) }} total ·
+    ${{ "{:,.0f}".format(total_revenue|float) }} net (80%)
+  </small>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Search</label>
+        <input type="text" class="form-control" name="search"
+               placeholder="Client, project, account, developer…"
+               value="{{ search or '' }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Status</label>
+        <select class="form-select" name="status">
+          <option value="">All Status</option>
+          {% for s in ['WIP', 'Submitted', 'Delivered', 'Revision'] %}
+          <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Month</label>
+        <input type="month" class="form-control" name="month" value="{{ month_filter or '' }}">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-filter me-1"></i>Filter
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    {% if clients %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Account</th>
+            <th>Client</th>
+            <th>Project</th>
+            <th>Status</th>
+            <th>Developer</th>
+            <th>Delivery</th>
+            <th>Order $</th>
+            <th>Net 80%</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in clients %}
+          {% set order_amt = (c.order_amount or 0)|float %}
+          {% set bonus_amt = (c.bonus_amount or 0)|float %}
+          {% set net_amt = (order_amt + bonus_amt) * 0.8 %}
+          <tr>
+            <td>
+              {% if c.date %}
+                {{ c.date.strftime('%b %d, %Y') if c.date is not string else c.date }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge badge-status">{{ c.account or '—' }}</span>
+            </td>
+            <td>
+              <div class="fw-semibold">{{ c.client_name or '—' }}</div>
+              {% if c.service_type %}
+              <small class="text-muted">{{ c.service_type }}</small>
+              {% endif %}
+            </td>
+            <td>
+              <small>{{ c.project_name or '—' }}</small>
+            </td>
+            <td>
+              {% set st = c.status or 'WIP' %}
+              <span class="badge badge-status">{{ st }}</span>
+            </td>
+            <td>
+              <small>{{ c.developer or '—' }}</small>
+            </td>
+            <td>
+              {% if c.deli_last_date %}
+                {{ c.deli_last_date.strftime('%b %d') if c.deli_last_date is not string else c.deli_last_date }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="fw-semibold">
+              ${{ "{:,.0f}".format(order_amt) }}
+              {% if bonus_amt > 0 %}
+              <small class="text-muted d-block">+${{ "{:,.0f}".format(bonus_amt) }} bonus</small>
+              {% endif %}
+            </td>
+            <td class="text-accent fw-bold">
+              ${{ "{:,.0f}".format(net_amt) }}
+            </td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a href="{{ url_for('clients_edit', id=c.id) }}"
+                   class="btn btn-outline-secondary" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                {% if c.sheet_link %}
+                <a href="{{ c.sheet_link }}" target="_blank" rel="noopener"
+                   class="btn btn-outline-secondary" title="Sheet">
+                  <i class="bi bi-table"></i>
+                </a>
+                {% endif %}
+                <form action="{{ url_for('clients_delete', id=c.id) }}" method="POST"
+                      class="d-inline"
+                      data-confirm="Delete order for &quot;{{ c.client_name }}&quot;? This cannot be undone.">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-outline-danger" type="submit" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="7" class="fw-bold text-end pe-3">Total</td>
+            <td class="fw-bold">${{ "{:,.0f}".format(total_orders|float) }}</td>
+            <td class="fw-bold text-accent">${{ "{:,.0f}".format(total_revenue|float) }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-bag" style="font-size:2.5rem"></i>
+      <p class="mt-2 mb-2">No orders yet</p>
+      <a href="{{ url_for('clients_new') }}" class="btn btn-success btn-sm">
+        <i class="bi bi-plus-lg me-1"></i>Add Order
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

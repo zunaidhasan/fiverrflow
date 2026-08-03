@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - Fiverr CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Performance Reports</h1>
+        <a href="{{ url_for('reports') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+        </a>
+    </div>
+    
+    <!-- Summary Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="fs-1 fw-bold text-primary">{{ total_leads }}</div>
+                    <div class="text-muted">Total Leads</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="fs-1 fw-bold text-info">{{ briefs_submitted }}</div>
+                    <div class="text-muted">Briefs Submitted</div>
+                    <small class="text-success">{{ "%.1f"|format(brief_rate) }}% rate</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="fs-1 fw-bold text-warning">{{ proposals_sent }}</div>
+                    <div class="text-muted">Proposals Sent</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="fs-1 fw-bold text-success">{{ sold_count }}</div>
+                    <div class="text-muted">Sold</div>
+                    <small class="text-success">{{ "%.1f"|format(conversion_rate) }}% conversion</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Revenue Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card stat-card pipeline h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="stat-label mb-1">Revenue (80% Share)</div>
+                            <div class="stat-value">${{ "{:,.0f}".format(total_revenue) }}</div>
+                        </div>
+                        <i class="bi bi-currency-dollar stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="stat-label mb-1">Total Quoted</div>
+                            <div class="stat-value">${{ "{:,.0f}".format(total_quoted) }}</div>
+                        </div>
+                        <i class="bi bi-receipt stat-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- By Category -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Performance by Category</h5>
+                </div>
+                <div class="card-body">
+                    {% if by_category %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th class="text-center">Leads</th>
+                                    <th class="text-center">Sold</th>
+                                    <th class="text-center">Rate</th>
+                                    <th class="text-end">Quoted</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cat, data in by_category.items() %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-{{ 'primary' if cat == 'WordPress' else 'success' if cat == 'Shopify' else 'info' if cat == 'Custom' else 'warning' }}">
+                                            {{ cat }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">{{ data.total }}</td>
+                                    <td class="text-center">{{ data.sold }}</td>
+                                    <td class="text-center">
+                                        {% if data.total > 0 %}
+                                        <span class="badge bg-{{ 'success' if (data.sold / data.total * 100) >= 20 else 'warning' }}">
+                                            {{ "%.0f"|format(data.sold / data.total * 100) }}%
+                                        </span>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end fw-semibold">${{ "{:,.0f}".format(data.quoted) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pipeline Funnel -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Conversion Funnel</h5>
+                </div>
+                <div class="card-body">
+                    {% set statuses = ['New', 'Brief Submitted', 'Replied', 'Proposal Sent', 'Sold'] %}
+                    {% set colors = ['secondary', 'info', 'warning', 'primary', 'success'] %}
+                    {% set max_val = total_leads if total_leads > 0 else 1 %}
+                    
+                    <div class="d-flex flex-column gap-3">
+                        {% for status in statuses %}
+                        {% set count = leads_by_stage[status] if status in leads_by_stage else 0 %}
+                        <div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>{{ status }}</span>
+                                <span class="fw-bold">{{ count }}</span>
+                            </div>
+                            <div class="progress" style="height: 24px;">
+                                <div class="progress-bar bg-{{ colors[loop.index0] }}" 
+                                     style="width: {{ (count / max_val * 100) if max_val > 0 else 0 }}%">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Leads -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">This Month's Leads</h5>
+        </div>
+        <div class="card-body">
+            {% if monthly_leads %}
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Client</th>
+                            <th>Profile</th>
+                            <th>Category</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in monthly_leads[:20] %}
+                        <tr>
+                            <td>{{ lead.date.strftime('%b %d') if lead.date else '-' }}</td>
+                            <td>{{ lead.client_username }}</td>
+                            <td>{{ lead.profile_name }}</td>
+                            <td>{{ lead.category or '-' }}</td>
+                            <td>${{ "{:,.0f}".format(lead.quoted_amount or 0) }}</td>
+                            <td>
+                                <span class="badge bg-{{ lead.STATUS_COLORS.get(lead.status, 'secondary') }}">
+                                    {{ lead.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if monthly_leads|length > 20 %}
+            <div class="text-center text-muted py-2">
+                Showing 20 of {{ monthly_leads|length }} leads
+            </div>
+            {% endif %}
+            {% else %}
+            <p class="text-muted text-center py-4">No leads this month</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% set leads_by_stage = {
+    'New': monthly_leads|selectattr('status', 'equalto', 'New')|list|length,
+    'Brief Submitted': monthly_leads|selectattr('status', 'equalto', 'Brief Submitted')|list|length,
+    'Replied': monthly_leads|selectattr('status', 'equalto', 'Replied')|list|length,
+    'Proposal Sent': monthly_leads|selectattr('status', 'equalto', 'Proposal Sent')|list|length,
+    'Sold': monthly_leads|selectattr('status', 'equalto', 'Sold')|list|length
+} %}
+{% endblock %}

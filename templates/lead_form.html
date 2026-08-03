@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit Lead' if lead else 'Add Lead' }}{% endblock %}
+{% block page_title %}{{ 'Edit Lead' if lead else 'Add Lead' }}{% endblock %}
+{% block content %}
+<div style="max-width:900px">
+  <div class="card">
+    <div class="card-body">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-control" name="date"
+              value="{{ lead.date.isoformat() if lead and lead.date else today }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Shift</label>
+            <select class="form-select" name="shift">
+              <option value="">Select…</option>
+              {% for s in ['Morning','Evening','Night'] %}
+              <option value="{{ s }}" {% if lead and lead.shift == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Source</label>
+            <select class="form-select" name="source">
+              <option value="">Select…</option>
+              {% for s in ['Brief++','Query++','Direct++','Existing++','Client Message++'] %}
+              <option value="{{ s }}" {% if lead and lead.source == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">URL</label>
+            <input type="url" class="form-control" name="url"
+              value="{{ lead.url if lead else 'https://www.fiverr.com/inbox/' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Client Username *</label>
+            <input type="text" class="form-control" name="client_username" required
+              value="{{ lead.client_username if lead else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Profile Name</label>
+            <input type="text" class="form-control" name="profile_name"
+              value="{{ lead.profile_name if lead else '' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Category</label>
+            <select class="form-select" name="category">
+              <option value="">Select…</option>
+              {% for c in ['WordPress','Shopify','Custom','UI/UX','WebFlow'] %}
+              <option value="{{ c }}" {% if lead and lead.category == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Quoted Amount ($)</label>
+            <input type="number" step="0.01" min="0" class="form-control" name="quoted_amount"
+              value="{{ lead.quoted_amount if lead else 0 }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <select class="form-select" name="status">
+              {% for s in ['New','Brief Submitted','Replied','Proposal Sent','Sold','Passed'] %}
+              <option value="{{ s }}" {% if (not lead and s=='New') or (lead and lead.status == s) %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Pipeline Stage</label>
+            <select class="form-select" name="stage_key">
+              {% for s in stages %}
+              <option value="{{ s.key }}" {% if lead and lead.stage_key == s.key %}selected{% endif %}>{{ s.label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label d-block">Follow-ups</label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" name="first_followup" id="f1"
+                {% if lead and lead.first_followup %}checked{% endif %}>
+              <label class="form-check-label" for="f1">1st</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" name="second_followup" id="f2"
+                {% if lead and lead.second_followup %}checked{% endif %}>
+              <label class="form-check-label" for="f2">2nd</label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Checked By</label>
+            <input type="text" class="form-control" name="checked_by" value="{{ lead.checked_by if lead else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Screenshot / Pass reason</label>
+            <input type="text" class="form-control" name="screenshot_reason" value="{{ lead.screenshot_reason if lead else '' }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Remarks</label>
+            <textarea class="form-control" name="remarks" rows="3">{{ lead.remarks if lead else '' }}</textarea>
+          </div>
+
+          {% if custom_fields %}
+          <div class="col-12"><hr><h6 class="text-muted">Custom fields</h6></div>
+          {% set cd = lead.custom_data if lead and lead.custom_data else {} %}
+          {% for f in custom_fields %}
+          <div class="col-md-6">
+            <label class="form-label">{{ f.label }}</label>
+            {% set v = cd.get(f.field_key, '') if cd else '' %}
+            {% if f.field_type == 'select' %}
+            <select class="form-select" name="cf_{{ f.field_key }}">
+              <option value="">—</option>
+              {% set opts = f.options if f.options is iterable and f.options is not string else [] %}
+              {% for opt in opts %}
+              <option value="{{ opt }}" {% if v == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+            {% elif f.field_type == 'number' %}
+            <input type="number" step="0.01" class="form-control" name="cf_{{ f.field_key }}" value="{{ v or '' }}">
+            {% elif f.field_type == 'url' %}
+            <input type="url" class="form-control" name="cf_{{ f.field_key }}" value="{{ v or '' }}">
+            {% elif f.field_type == 'date' %}
+            <input type="date" class="form-control" name="cf_{{ f.field_key }}" value="{{ v or '' }}">
+            {% else %}
+            <input type="text" class="form-control" name="cf_{{ f.field_key }}" value="{{ v or '' }}">
+            {% endif %}
+          </div>
+          {% endfor %}
+          {% endif %}
+        </div>
+        <hr class="my-4">
+        <div class="d-flex justify-content-between">
+          <a href="{{ url_for('leads') }}" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">{{ 'Update' if lead else 'Add Lead' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

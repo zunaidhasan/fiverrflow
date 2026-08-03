@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FiverrFlow — Presales CRM for Freelancers</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #0a0c10;
+      --surface: #12151c;
+      --border:  #1c2030;
+      --accent:  #00e5a0;
+      --accent2: #4f8cff;
+      --text:    #e8eaf0;
+      --muted:   #6b7280;
+    }
+    body { background: var(--bg); color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+
+    /* Nav */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 40px; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: rgba(10,12,16,.92);
+      backdrop-filter: blur(12px); z-index: 100;
+    }
+    .logo { font-size: 1.2rem; font-weight: 800; color: var(--accent); letter-spacing: -.5px; }
+    .logo span { color: var(--text); }
+    .nav-links { display: flex; gap: 12px; align-items: center; }
+    .btn-ghost {
+      padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border);
+      color: var(--muted); text-decoration: none; font-size: .875rem;
+      transition: all .15s;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-cta {
+      padding: 8px 20px; border-radius: 8px;
+      background: var(--accent); color: #0a0c10;
+      font-weight: 700; font-size: .875rem; text-decoration: none;
+      transition: background .15s;
+    }
+    .btn-cta:hover { background: #00c98a; }
+
+    /* Hero */
+    .hero {
+      text-align: center; padding: 100px 24px 80px;
+      max-width: 760px; margin: 0 auto;
+    }
+    .hero-badge {
+      display: inline-block; padding: 5px 14px; border-radius: 20px;
+      border: 1px solid rgba(0,229,160,.3); color: var(--accent);
+      font-size: .75rem; font-weight: 600; letter-spacing: .5px;
+      margin-bottom: 28px; text-transform: uppercase;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 800;
+      line-height: 1.1; letter-spacing: -.5px; margin-bottom: 20px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      font-size: 1.1rem; color: var(--muted); line-height: 1.7;
+      max-width: 520px; margin: 0 auto 40px;
+    }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-hero {
+      padding: 14px 32px; border-radius: 10px; font-size: 1rem;
+      font-weight: 700; text-decoration: none; transition: all .15s;
+    }
+    .btn-hero-primary {
+      background: var(--accent); color: #0a0c10;
+    }
+    .btn-hero-primary:hover { background: #00c98a; transform: translateY(-1px); }
+    .btn-hero-secondary {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-hero-secondary:hover { border-color: var(--muted); }
+
+    /* Features */
+    .features {
+      max-width: 1100px; margin: 0 auto; padding: 80px 24px;
+    }
+    .section-label {
+      text-align: center; font-size: .72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent);
+      margin-bottom: 14px;
+    }
+    .section-title {
+      text-align: center; font-size: 2rem; font-weight: 700;
+      margin-bottom: 60px; letter-spacing: -.3px;
+    }
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 28px;
+      transition: border-color .2s, transform .2s;
+    }
+    .feature-card:hover { border-color: rgba(0,229,160,.3); transform: translateY(-2px); }
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: rgba(0,229,160,.1); display: flex; align-items: center;
+      justify-content: center; font-size: 1.3rem; color: var(--accent);
+      margin-bottom: 16px;
+    }
+    .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: .875rem; color: var(--muted); line-height: 1.6; }
+
+    /* Stats */
+    .stats-bar {
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .stats-inner {
+      max-width: 900px; margin: 0 auto; padding: 40px 24px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 32px; text-align: center;
+    }
+    .stat-num { font-size: 2.2rem; font-weight: 800; color: var(--accent); }
+    .stat-lbl { font-size: .8rem; color: var(--muted); margin-top: 4px; }
+
+    /* CTA */
+    .cta-section {
+      text-align: center; padding: 100px 24px;
+      max-width: 600px; margin: 0 auto;
+    }
+    .cta-section h2 { font-size: 2rem; font-weight: 800; margin-bottom: 16px; }
+    .cta-section p  { color: var(--muted); margin-bottom: 36px; font-size: 1rem; }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border); padding: 28px 40px;
+      display: flex; justify-content: space-between; align-items: center;
+      color: var(--muted); font-size: .8rem;
+    }
+    .footer-logo { font-weight: 800; color: var(--accent); }
+    .footer-logo span { color: var(--text); }
+
+    @media (max-width: 600px) {
+      nav { padding: 14px 20px; }
+      footer { flex-direction: column; gap: 10px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Fiverr<span>Flow</span></div>
+  <div class="nav-links">
+    <a href="{{ url_for('login') }}" class="btn-ghost">Log In</a>
+    <a href="{{ url_for('register') }}" class="btn-cta">Get Started</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge"><i class="bi bi-lightning-charge-fill me-1"></i>Presales CRM</div>
+  <h1>Close More Deals on<br><span>Fiverr & Upwork</span></h1>
+  <p>Track every lead, manage your pipeline, and never let a deal slip through the cracks. Built for freelancers and small sales teams.</p>
+  <div class="hero-actions">
+    <a href="{{ url_for('register') }}" class="btn-hero btn-hero-primary">
+      <i class="bi bi-rocket-takeoff me-2"></i>Start for Free
+    </a>
+    <a href="{{ url_for('login') }}" class="btn-hero btn-hero-secondary">
+      Sign In
+    </a>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div>
+      <div class="stat-num">∞</div>
+      <div class="stat-lbl">Contacts &amp; Leads</div>
+    </div>
+    <div>
+      <div class="stat-num">6</div>
+      <div class="stat-lbl">Pipeline Stages</div>
+    </div>
+    <div>
+      <div class="stat-num">100%</div>
+      <div class="stat-lbl">Data Ownership</div>
+    </div>
+    <div>
+      <div class="stat-num">0</div>
+      <div class="stat-lbl">Monthly Fee</div>
+    </div>
+  </div>
+</div>
+
+<!-- Features -->
+<section class="features">
+  <div class="section-label">Everything you need</div>
+  <div class="section-title">Built for freelance sales teams</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon"><i class="bi bi-kanban"></i></div>
+      <h3>Visual Pipeline Board</h3>
+      <p>Drag and drop deals across stages — Lead, Qualified, Proposal, Negotiation, Won, Lost. See your entire pipeline at a glance.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="bi bi-people"></i></div>
+      <h3>Contact Management</h3>
+      <p>Track every client with notes, source (Fiverr, Upwork, Direct), and full deal history. Search and filter in seconds.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="bi bi-check2-square"></i></div>
+      <h3>Task Tracking</h3>
+      <p>Create tasks linked to deals and contacts. Prioritise by High / Medium / Low. Never miss a follow-up deadline.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="bi bi-shield-lock"></i></div>
+      <h3>Team Access Control</h3>
+      <p>Invite your team members. The first account becomes Admin. Only admins can manage team membership.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="bi bi-graph-up"></i></div>
+      <h3>Live Dashboard</h3>
+      <p>Pipeline value, won revenue, open tasks, stage breakdown — all in one real-time overview updated on every action.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon"><i class="bi bi-filetype-csv"></i></div>
+      <h3>CSV Import &amp; Export</h3>
+      <p>Bulk import contacts from spreadsheets or export your entire contact and deal list any time. Your data, your way.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2>Ready to organise your sales?</h2>
+  <p>Create your account in seconds. The first person to register becomes the team admin.</p>
+  <a href="{{ url_for('register') }}" class="btn-hero btn-hero-primary">
+    <i class="bi bi-person-plus me-2"></i>Create Your Account
+  </a>
+</section>
+
+<footer>
+  <div class="footer-logo">Fiverr<span>Flow</span></div>
+  <div>Presales CRM · Built with Flask &amp; Turso</div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,108 @@
+/* FiverrFlow — UI additions layered on top of base.html's inline theme tokens.
+   Toasts, kanban drag states, sidebar backdrop, sticky tables, a11y focus. */
+
+/* ── Toasts ─────────────────────────────────────────────────────────────── */
+.toast-stack {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1080;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  max-width: min(420px, calc(100vw - 2rem));
+  pointer-events: none;
+}
+.ff-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  padding: .75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--ff-border, #2a2f3a);
+  background: var(--ff-surface, #171a21);
+  color: var(--ff-text, #e6e8ee);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  animation: ff-toast-in .18s ease-out;
+}
+@keyframes ff-toast-in {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.ff-toast-out { opacity: 0; transform: translateX(16px); transition: opacity .2s, transform .2s; }
+.ff-toast-body { flex: 1; font-size: .9rem; line-height: 1.4; word-break: break-word; }
+.ff-toast-close {
+  background: none; border: 0; color: inherit;
+  font-size: 1.25rem; line-height: 1; opacity: .6; cursor: pointer; padding: 0;
+}
+.ff-toast-close:hover { opacity: 1; }
+.ff-toast-success { border-left: 3px solid #22c55e; }
+.ff-toast-danger  { border-left: 3px solid #ef4444; }
+.ff-toast-warning { border-left: 3px solid #f59e0b; }
+.ff-toast-info    { border-left: 3px solid #3b82f6; }
+
+/* ── Kanban drag states ─────────────────────────────────────────────────── */
+.kanban-card { transition: opacity .15s, transform .15s; }
+.kanban-card.dragging { opacity: .45; transform: scale(.98); cursor: grabbing; }
+.kanban-card.saving { opacity: .6; pointer-events: none; }
+.kanban-col.drop-target {
+  outline: 2px dashed var(--ff-accent, #6366f1);
+  outline-offset: -4px;
+  background: color-mix(in srgb, var(--ff-accent, #6366f1) 6%, transparent);
+}
+.kanban-col { transition: background .12s; }
+
+/* ── Sidebar backdrop (mobile) ──────────────────────────────────────────── */
+.sidebar-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, .5);
+  opacity: 0; visibility: hidden;
+  transition: opacity .2s, visibility .2s;
+  z-index: 1039;
+}
+.sidebar-backdrop.show { opacity: 1; visibility: visible; }
+body.sidebar-open { overflow: hidden; }
+@media (min-width: 769px) {
+  .sidebar-backdrop { display: none; }
+  body.sidebar-open { overflow: auto; }
+}
+
+/* ── Sticky table header + first column ─────────────────────────────────── */
+.table-sticky { position: relative; max-height: calc(100vh - 260px); overflow: auto; }
+.table-sticky thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--ff-surface, #171a21);
+}
+.table-sticky tbody th:first-child,
+.table-sticky td.sticky-col,
+.table-sticky th.sticky-col {
+  position: sticky; left: 0; z-index: 1;
+  background: var(--ff-surface, #171a21);
+}
+.table-sticky thead th.sticky-col { z-index: 3; }
+
+/* ── Accessibility ──────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--ff-accent, #6366f1);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.skip-link {
+  position: absolute; left: -9999px;
+  top: .5rem; z-index: 1090;
+  padding: .5rem .9rem; border-radius: 6px;
+  background: var(--ff-accent, #6366f1); color: #fff;
+}
+.skip-link:focus { left: .5rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ── Empty states ───────────────────────────────────────────────────────── */
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(--ff-muted, #8b93a5); }
+.empty-state .bi { display: block; margin-bottom: .5rem; }

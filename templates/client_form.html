@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit Order' if client and client.id is defined else 'Add Order' }}{% endblock %}
+{% block page_title %}{% if from_presale %}Mark as Sold{% elif client and client.id is defined %}Edit Order{% else %}Add Order{% endif %}{% endblock %}
+{% block content %}
+<div style="max-width:900px">
+  <div class="card">
+    <div class="card-body">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Order Date</label>
+            <input type="date" class="form-control" name="date"
+              value="{{ client.date.isoformat() if client and client.date else today }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Account / Profile *</label>
+            <input type="text" class="form-control" name="account" required
+              value="{{ client.account if client else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Service Type</label>
+            <select class="form-select" name="service_type">
+              <option value="">Select…</option>
+              {% for t in ['WordPress','Shopify','Custom','UI/UX','WebFlow'] %}
+              <option value="{{ t }}" {% if client and client.service_type == t %}selected{% endif %}>{{ t }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Order ID</label>
+            <input type="text" class="form-control" name="order_id" value="{{ client.order_id if client else '' }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Project Name</label>
+            <input type="text" class="form-control" name="project_name" value="{{ client.project_name if client else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Client Name *</label>
+            <input type="text" class="form-control" name="client_name" required
+              value="{{ client.client_name if client else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Status</label>
+            <select class="form-select" name="status">
+              {% for s in ['WIP','Submitted','Delivered','Revision'] %}
+              <option value="{{ s }}" {% if (not client and s=='WIP') or (client and client.status == s) %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Assign Leader</label>
+            <input type="text" class="form-control" name="assign_leader" value="{{ client.assign_leader if client else '' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Developer</label>
+            <input type="text" class="form-control" name="developer" value="{{ client.developer if client else '' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Delivery Date</label>
+            <input type="date" class="form-control" name="deli_last_date"
+              value="{{ client.deli_last_date.isoformat() if client and client.deli_last_date else '' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Order Amount ($)</label>
+            <input type="number" step="0.01" min="0" class="form-control" name="order_amount"
+              value="{{ client.order_amount if client else 0 }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Bonus Amount ($)</label>
+            <input type="number" step="0.01" min="0" class="form-control" name="bonus_amount"
+              value="{{ client.bonus_amount if client else 0 }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Sheet Link</label>
+            <input type="url" class="form-control" name="sheet_link" value="{{ client.sheet_link if client else '' }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Comments</label>
+            <textarea class="form-control" name="comment" rows="2">{{ client.comment if client else '' }}</textarea>
+          </div>
+
+          {% if custom_fields %}
+          <div class="col-12"><hr><h6 class="text-muted">Custom fields</h6></div>
+          {% set cd = client.custom_data if client and client.custom_data else {} %}
+          {% for f in custom_fields %}
+          <div class="col-md-6">
+            <label class="form-label">{{ f.label }}</label>
+            {% set v = cd.get(f.field_key, '') if cd else '' %}
+            {% if f.field_type == 'select' %}
+            <select class="form-select" name="cf_{{ f.field_key }}">
+              <option value="">—</option>
+              {% set opts = f.options if f.options is iterable and f.options is not string else [] %}
+              {% for opt in opts %}
+              <option value="{{ opt }}" {% if v == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+            {% elif f.field_type == 'number' %}
+            <input type="number" step="0.01" class="form-control" name="cf_{{ f.field_key }}" value="{{ v or '' }}">
+            {% else %}
+            <input type="text" class="form-control" name="cf_{{ f.field_key }}" value="{{ v or '' }}">
+            {% endif %}
+          </div>
+          {% endfor %}
+          {% endif %}
+        </div>
+        <hr class="my-4">
+        <div class="d-flex justify-content-between">
+          <a href="{{ url_for('clients') if not from_presale else url_for('leads') }}" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-success">
+            {% if from_presale %}Mark as Sold{% elif client and client.id is defined %}Update{% else %}Add Order{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

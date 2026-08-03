@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block page_title %}Login{% endblock %}
+{% block content %}
+<div style="max-width:400px;margin:40px auto">
+  <div class="card">
+    <div class="card-header">Sign in</div>
+    <div class="card-body">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control" required autofocus>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input type="password" name="password" class="form-control" required>
+        </div>
+        <button class="btn btn-primary w-100">Sign in</button>
+      </form>
+      <p class="text-muted mt-3 mb-0 text-center" style="font-size:.8rem">
+        First account? <a href="{{ url_for('register') }}" class="text-accent">Register as admin</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
